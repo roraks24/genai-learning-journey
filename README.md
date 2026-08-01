@@ -1,55 +1,131 @@
-# groq-cli-chatbot
+# GenAI Learning Journey
 
-A command-line chatbot built on the Groq API (Llama 3.3 70B), built as Week 1 of a 60-day GenAI Developer learning plan. Started as a raw API call and grew into a persistent, persona-driven assistant with real error handling — every layer built and debugged from scratch.
+A 60-day journey documenting my path from raw LLM API calls to production-ready Generative AI applications.
 
-## Features
+The goal of this repository is not just to learn frameworks, but to understand how modern AI systems are built—from prompting an LLM to building Retrieval-Augmented Generation (RAG) systems, AI agents, and production-ready backend services.
 
-- **Multi-turn conversation** — the model remembers earlier messages within a session by maintaining a running `conversation_history` list.
-- **Persistent memory across runs** — conversation history is saved to `conversation_history.json` and reloaded automatically the next time the program starts.
-- **API error handling** — gracefully catches `RateLimitError`, `APIConnectionError`, and `APIStatusError` instead of crashing, with clean messages and no corrupted history state.
-- **Coding mentor persona** — a system prompt shapes the assistant into a coding mentor that gives roadmaps and explains bugs conceptually, without handing over full solutions or rewriting code directly.
+---
 
-## Setup
+## Roadmap
 
-1. Clone the repo:
-   ```
-   git clone https://github.com/roraks24/groq-cli-chatbot.git
-   cd groq-cli-chatbot
-   ```
+| Week | Topic | Status |
+|------|-------|--------|
+| Week 1 | Raw LLM API (Groq SDK) |  Completed |
+| Week 2 | LangChain Fundamentals |  In Progress |
+| Week 3 | Retrieval-Augmented Generation (RAG) |  Planned |
+| Week 4 | AI Agents |  Planned |
+| Week 5 | Capstone AI Project |  Planned |
 
-2. Create and activate a virtual environment:
-   ```
-   python -m venv .venv
-   .venv\Scripts\Activate     # Windows PowerShell
-   ```
+---
 
-3. Install dependencies:
-   ```
-   pip install groq python-dotenv
-   ```
+## Repository Structure
 
-4. Create a `.env` file in the project root with your Groq API key:
-   ```
-   GROQ_API_KEY=your_key_here
-   ```
+```text
+genai-learning-journey/
+│
+├── week1_raw_api/
+│   ├── README.md
+│   ├── main.py
+│   ├── persona.txt
+│   └── conversation_history.json
+│
+├── week2_langchain/
+│   ├── README.md
+│   ├── chatbot.py
+│   ├── structured_output.py
+│   └── models.py
+│
+├── week3_rag/
+│
+├── week4_agents/
+│
+└── week5_capstone/
+```
 
-5. Run it:
-   ```
-   python py.py
-   ```
+---
 
-## Usage
+## Skills Covered
 
-- Choose option `1` to start chatting.
-- Type your message and press Enter.
-- Type `#` to end the chat and return to the menu (this is also when conversation history is saved).
-- Choose option `2` to quit the program.
+### LLM Fundamentals
+- Prompt Engineering
+- System Prompts
+- Multi-turn Conversations
+- Conversation History
+- Error Handling
 
-## Known limitations
+### LangChain
+- Chat Models
+- Prompt Templates
+- LCEL (LangChain Expression Language)
+- RunnableWithMessageHistory
+- Output Parsers
+- Structured Output
+- Pydantic Models
 
-- **History is only saved on exit.** If the program is closed abruptly (force-quit, crash, closing the terminal directly) without typing `#` first, that session's messages are lost. History is not auto-saved after every message.
-- **The persona doesn't enforce topic boundaries.** The system prompt defines *how* the assistant should behave on coding topics, but doesn't restrict it from answering unrelated questions (confirmed via real user testing — it happily answered a general knowledge and current-events question in Hindi). A stricter prompt or explicit refusal instruction would be needed to fix this.
+### Upcoming
+- Embeddings
+- Vector Databases
+- FAISS / ChromaDB
+- Retrieval-Augmented Generation (RAG)
+- AI Agents
+- LangGraph
+- FastAPI
+- Deployment
 
-## Built as part of
+---
 
-Week 1 of a 60-day GenAI Developer learning plan — raw API fundamentals before moving into LangChain, RAG, and agents in later weeks.
+## Learning Philosophy
+
+This repository follows one rule:
+
+> **Write every line of code myself.**
+
+I intentionally avoid copying tutorials. Every concept is implemented from scratch after understanding how it works, with mistakes documented and fixed during the learning process.
+
+---
+
+## Progress
+
+### Week 1 — Raw LLM API
+- Built a CLI chatbot using the Groq SDK
+- Implemented multi-turn conversations
+- Added JSON conversation persistence
+- Added API error handling
+- Created a coding assistant persona
+
+### Week 2 — LangChain
+- Migrated the chatbot from raw SDK to LangChain
+- Learned Prompt Templates
+- Built LCEL pipelines
+- Implemented conversation history
+- Explored output parsers
+- Implemented structured output using Pydantic
+
+---
+
+## Tech Stack
+
+- Python
+- Groq API
+- LangChain
+- Pydantic
+- Git & GitHub
+
+---
+
+## Future Goals
+
+By the end of this journey, this repository will contain:
+
+- Production-ready RAG system
+- AI Agents
+- FastAPI backend
+- Deployable AI applications
+- End-to-end capstone project
+
+---
+
+## Connect With Me
+
+- GitHub: https://github.com/roraks24
+- LinkedIn: https://www.linkedin.com/in/rorak/
