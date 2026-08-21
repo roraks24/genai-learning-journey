@@ -1,16 +1,16 @@
 # GenAI Learning Journey
 
-A 60-day hands-on journey from raw LLM API calls to production-ready Generative AI applications.
+A 60-day hands-on journey documenting my path from raw LLM API calls to production-ready Generative AI applications.
 
-The goal of this repository is not just to learn frameworks or copy tutorials. I am building each concept myself, understanding what happens underneath, and gradually combining the concepts into real applications.
+The purpose of this repository is not simply to learn frameworks or copy tutorials. The goal is to understand how modern AI applications are built from the ground up.
 
-The journey is evolving from:
+I started with direct LLM API calls and gradually moved into LangChain, structured outputs, Retrieval-Augmented Generation, advanced retrieval techniques, AI agents, memory, and eventually production-ready AI applications.
 
-**Raw LLM APIs → LangChain → RAG → Agents → Capstone → Production AI**
+Every concept is learned by implementing it, testing it, breaking it, debugging it, and then understanding why it works.
 
 ---
 
-## Roadmap
+# Roadmap
 
 | Week | Topic | Status |
 |------|-------|--------|
@@ -18,12 +18,12 @@ The journey is evolving from:
 | Week 2 | LangChain Fundamentals | Completed |
 | Week 3 | Retrieval-Augmented Generation (RAG) | Completed |
 | Week 4 | LangChain Agents | Upcoming |
-| Week 5 | Capstone Project | Upcoming |
-| Week 6+ | Polish, Portfolio & Applications | Upcoming |
+| Week 5 | Capstone AI Project | Upcoming |
+| Week 6+ | Polish, Portfolio, Applications & Interview Preparation | Upcoming |
 
 ---
 
-## Repository Structure
+# Repository Structure
 
 ```text
 genai-learning-journey/
