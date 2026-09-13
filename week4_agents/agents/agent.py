@@ -269,59 +269,8 @@ if __name__ == "__main__":
     )
     print("Final answer:", answer)
 
-    print("\n--- Test 2 ---")
-    answer = run_agent(
-        "What is the weather in Jaipur?"
-    )
-    print("Final answer:", answer)
+   
 
-    print("\n--- Test 3 ---")
-    answer = run_agent(
-        "What is the capital of France?"
-    )
-    print("Final answer:", answer)
 
-    print("\n--- Test 4 ---")
-    answer = run_agent(
-        "First calculate 25 * 17, "
-        "then calculate the result plus 75."
-    )
-    print("Final answer:", answer)
 
-    print("\n--- Test 5 ---")
-    answer = run_agent(
-        "Calculate 50 * 12 "
-        "and tell me the weather in Jaipur."
-    )
-    print("Final answer:", answer)
 
-    print("\n--- Test 6 ---")
-
-    answer = run_agent(
-    "Get information about India.",
-    tool_choice={
-        "type": "function",
-        "function": {
-            "name": "get_country_info"
-        }
-    }
-)
-
-    print("Final answer:", answer)
-
-    print("\n--- Test 7: Invalid country argument ---")
-
-answer = run_agent(
-    "Use the get_country_info tool with an empty country name."
-)
-
-print("\nFinal answer:", answer)
-
-print("\n--- Test 8: Tool result grounding ---")
-
-answer = run_agent(
-    "Use the get_country_info tool to get information about India. "
-    "Only report information returned by the tool."
-)
-
-print("\nFinal answer:", answer)
