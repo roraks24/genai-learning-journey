@@ -263,13 +263,83 @@ def run_agent(
 
 if __name__ == "__main__":
 
-    print("\n--- Test 1 ---")
-    answer = run_agent(
-        "What is 25 * 17?"
-    )
-    print("Final answer:", answer)
+ # ============================================================
+# DAY 25 — MULTI-TOOL + MULTI-STEP AGENT TESTS
+# ============================================================
 
-   
+ print("\n" + "=" * 60)
+print("DAY 25 — MULTI-TOOL + MULTI-STEP AGENT TESTS")
+print("=" * 60)
+
+
+# ------------------------------------------------------------
+# TEST 1 — Correct Calculator Tool Selection
+# ------------------------------------------------------------
+
+print("\n--- Day 25 Test 1: Calculator ---")
+
+answer = run_agent(
+    "What is 125 * 8?"
+)
+
+print("\nFinal answer:", answer)
+
+
+# ------------------------------------------------------------
+# TEST 2 — Genuine Multi-Step Tool Usage
+# ------------------------------------------------------------
+
+print("\n--- Day 25 Test 2: Multi-Step ---")
+
+answer = run_agent(
+    "Use the calculator tool to calculate 3400 / 850. "
+    "After you get the result, use the calculator tool again "
+    "to multiply that result by 60. "
+    "Do not calculate either result yourself. "
+    "Return both results."
+)
+
+print("\nFinal answer:", answer)
+
+
+# ------------------------------------------------------------
+# TEST 3 — Multiple Different Tools
+# ------------------------------------------------------------
+
+print("\n--- Day 25 Test 3: Multi-Tool ---")
+
+answer = run_agent(
+    "Calculate 50 * 12 and also tell me the weather in Jaipur."
+)
+
+print("\nFinal answer:", answer)
+
+
+# ------------------------------------------------------------
+# TEST 4 — Country Information Tool
+# ------------------------------------------------------------
+
+print("\n--- Day 25 Test 4: Country Tool ---")
+
+answer = run_agent(
+    "Use the get_country_info tool for India. "
+    "Only report information returned by the tool."
+)
+
+print("\nFinal answer:", answer)
+
+
+# ------------------------------------------------------------
+# TEST 5 — No Tool Required
+# ------------------------------------------------------------
+
+print("\n--- Day 25 Test 5: No Tool ---")
+
+answer = run_agent(
+    "What is the capital of France?"
+)
+
+print("\nFinal answer:", answer)
 
 
 
