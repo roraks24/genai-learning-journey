@@ -1,5 +1,4 @@
-import json
-import os
+import json, os, requests
 
 from dotenv import load_dotenv
 from groq import Groq
@@ -267,80 +266,149 @@ if __name__ == "__main__":
 # DAY 25 — MULTI-TOOL + MULTI-STEP AGENT TESTS
 # ============================================================
 
- print("\n" + "=" * 60)
-print("DAY 25 — MULTI-TOOL + MULTI-STEP AGENT TESTS")
-print("=" * 60)
-
-
-# ------------------------------------------------------------
-# TEST 1 — Correct Calculator Tool Selection
-# ------------------------------------------------------------
-
-print("\n--- Day 25 Test 1: Calculator ---")
+ print("\n--- Day 26 Test 1: Invalid Arguments ---")
 
 answer = run_agent(
-    "What is 125 * 8?"
+    "Use the weather tool with an empty city name."
+)
+
+print("\nFinal answer:", answer)
+
+print("\n--- Day 26 Test 2: Malformed JSON ---")
+
+from types import SimpleNamespace
+
+fake_tool_call = SimpleNamespace(
+    function=SimpleNamespace(
+        name="get_weather",
+        arguments='{"city": "Jaipur"'
+    )
+)
+
+result = execute_tool(fake_tool_call)
+
+print("Tool result:", result)
+
+print("\n--- Day 26 Test 3: Unknown Tool ---")
+
+fake_tool_call = SimpleNamespace(
+    function = SimpleNamespace(
+        name = "get_stock_price",
+        arguments='{"symbol": "NVDA"}'
+    )
+)
+
+result = execute_tool(fake_tool_call)
+
+print("Tool result: ", result)
+
+print("\n--- Day 26 Test 4: Tool Execution Error ---")
+
+def failing_tool(city: str):
+    raise RuntimeError("Simulated tool failure")
+
+TOOLS_MAP["failing_tool"] = failing_tool
+
+fake_tool_call = SimpleNamespace(
+    function=SimpleNamespace(
+        name="failing_tool",
+        arguments='{"city": "Jaipur"}'
+    )
+)
+
+result = execute_tool(fake_tool_call)
+
+print("Tool result:", result)
+
+del TOOLS_MAP["failing_tool"]
+
+
+
+
+print("\n--- Day 26 Test 5: API Failure ---")
+
+original_get = requests.get
+
+def failing_get(*args, **kwargs):
+    raise requests.RequestException("Simulated API failure")
+
+requests.get = failing_get
+
+result = get_country_info("India")
+
+print("Tool result:", result)
+
+requests.get = original_get
+
+
+
+
+print("\n--- Day 26 Test 6: Retry Handling ---")
+
+attempts = {"count": 0}
+
+original_get = requests.get
+
+
+def flaky_get(*args, **kwargs):
+    attempts["count"] += 1
+
+    if attempts["count"] < 3:
+        raise requests.RequestException(
+            f"Temporary failure on attempt {attempts['count']}"
+        )
+
+    return original_get(*args, **kwargs)
+
+
+requests.get = flaky_get
+
+for attempt in range(3):
+    try:
+        response = requests.get(
+            "https://example.com",
+            timeout=5
+        )
+
+        print(f"Request succeeded on attempt {attempt + 1}")
+        break
+
+    except requests.RequestException as e:
+        print(f"Attempt {attempt + 1} failed: {e}")
+
+requests.get = original_get
+
+
+
+
+
+print("\n--- Day 26 Test 7: Loop Prevention ---")
+
+answer = run_agent(
+    "Keep calling the calculator tool with 1 + 1 repeatedly.",
+    max_steps=3
 )
 
 print("\nFinal answer:", answer)
 
 
-# ------------------------------------------------------------
-# TEST 2 — Genuine Multi-Step Tool Usage
-# ------------------------------------------------------------
-
-print("\n--- Day 25 Test 2: Multi-Step ---")
-
-answer = run_agent(
-    "Use the calculator tool to calculate 3400 / 850. "
-    "After you get the result, use the calculator tool again "
-    "to multiply that result by 60. "
-    "Do not calculate either result yourself. "
-    "Return both results."
-)
-
-print("\nFinal answer:", answer)
 
 
-# ------------------------------------------------------------
-# TEST 3 — Multiple Different Tools
-# ------------------------------------------------------------
+print("\n--- Day 26 Test 8: Timeout Handling ---")
 
-print("\n--- Day 25 Test 3: Multi-Tool ---")
-
-answer = run_agent(
-    "Calculate 50 * 12 and also tell me the weather in Jaipur."
-)
-
-print("\nFinal answer:", answer)
+original_get = requests.get
 
 
-# ------------------------------------------------------------
-# TEST 4 — Country Information Tool
-# ------------------------------------------------------------
-
-print("\n--- Day 25 Test 4: Country Tool ---")
-
-answer = run_agent(
-    "Use the get_country_info tool for India. "
-    "Only report information returned by the tool."
-)
-
-print("\nFinal answer:", answer)
+def timeout_get(*args, **kwargs):
+    raise requests.Timeout("Simulated request timeout")
 
 
-# ------------------------------------------------------------
-# TEST 5 — No Tool Required
-# ------------------------------------------------------------
+requests.get = timeout_get
 
-print("\n--- Day 25 Test 5: No Tool ---")
+result = get_country_info("India")
 
-answer = run_agent(
-    "What is the capital of France?"
-)
+print("Tool result:", result)
 
-print("\nFinal answer:", answer)
-
-
+requests.get = original_get
 
 
