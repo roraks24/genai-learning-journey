@@ -16,37 +16,49 @@ client = Groq(
 )
 
 SYSTEM_PROMPT = """
-You are a helpful AI assistant with access to several tools.
+You are a helpful AI assistant with access to six tools.
 
-Available tools:
+AVAILABLE TOOLS
+
 1. calculator
-   - Use for arithmetic and numerical calculations when calculation accuracy is important.
+   - Use for arithmetic and numerical calculations when accuracy matters.
 
 2. get_weather
    - Use for current weather information for a city.
 
 3. get_country_info
-   - Use for country-related information available through the country information tool.
-   - Only report information returned by the tool when the user asks you to use it.
+   - Use for country information such as capital, region, and population.
+   - Only report information returned by the tool.
 
 4. currency_converter
    - Use for currency conversion and exchange-rate calculations.
 
 5. web_search
-   - Use when the user asks for current, recent, or web-based information that may not be reliably known from your built-in knowledge.
+   - Use for unknown, obscure, company-specific, current, recent,
+     or externally verifiable information.
+   - Use this tool instead of relying on your own memory when web
+     verification is appropriate.
+   - The only argument accepted by this tool is "query".
+   - Never provide cursor, id, page, offset, or other navigation
+     parameters.
 
 6. get_datetime
-   - Use for current date and time.
-   - Use the configured default timezone when no location or timezone is provided.
+   - Use for the current date and time.
+   - Use the requested city, country, or timezone when provided.
+   - If no location is provided, use the configured default timezone.
 
-Tool-use rules:
-- Use a tool when it provides information or computation that is more appropriate than answering directly.
-- Do not call a tool when it is unnecessary.
-- When a task requires multiple steps, use the output of one tool call as input to the next step when appropriate.
+TOOL-USAGE RULES
+
+- Use a tool when it is more appropriate than answering directly.
+- Do not use a tool when it is unnecessary.
+- For unknown or externally verifiable information, prefer web_search.
+- When a task requires multiple steps, use the result of one tool
+  call as input to the next tool call when appropriate.
 - Never invent tool results.
-- Treat tool results as authoritative for the specific operation that was performed.
-- If a tool returns an error, explain the problem clearly and do not fabricate a successful result.
-- Keep the final answer concise and directly answer the user's request.
+- Treat tool results as authoritative for the operation performed.
+- If a tool returns an error, explain the error clearly.
+- Do not fabricate a successful result after a tool failure.
+- Keep the final response concise and directly answer the user's request.
 """
 
 tools = [
@@ -138,13 +150,18 @@ tools = [
         "type": "function",
         "function": {
             "name": "web_search",
-            "description": "Search the web for current or recent information.",
+            "description": "Search the public web for unknown, obscure, "
+                           "current, recent, company-specific, or externally "
+                           "verifiable information. This tool accepts exactly "
+                           "one argument named 'query'.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query, such as 'latest NVIDIA news'."
+                        "description": "A single natural-language search query. "
+                                       "Do not provide cursor, id, page, offset, "
+                                       "or other parameters."
                     }
                 },
                 "required": ["query"]
@@ -269,6 +286,7 @@ def run_agent(
         )
 
 while True:
+    print("==================================================")
     choice = input("Ask anything (press # to exit): ")
 
     if choice == "#":
@@ -276,5 +294,7 @@ while True:
         break
 
     answer = run_agent(choice)
+    print()
+    print("Result:")
     print(answer)
     print()
