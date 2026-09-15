@@ -17,8 +17,8 @@ Every concept is learned by implementing it, testing it, breaking it, debugging 
 | Week 1 | Raw LLM API — Groq SDK | Completed |
 | Week 2 | LangChain Fundamentals | Completed |
 | Week 3 | Retrieval-Augmented Generation (RAG) | Completed |
-| Week 4 | LangChain Agents | Working |
-| Week 5 | Capstone AI Project | Upcoming |
+| Week 4 | LangChain Agents | Completed |
+| Week 5 | LangGraph | Working |
 | Week 6+ | Polish, Portfolio, Applications & Interview Preparation | Upcoming |
 
 ---
