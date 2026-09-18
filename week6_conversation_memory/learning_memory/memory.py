@@ -1,16 +1,25 @@
-from typing import TypedDict
-from langgraph.graph import StateGraph, MessagesState,START, END
-from langgraph.checkpoint.memory import InMemorySaver
-import json, os
+import json
+import os
+
 from dotenv import load_dotenv
 from groq import Groq
-from tools import calculator, get_country_info, get_weather, get_datetime, web_search,currency_converter
+
+from langchain_core.messages import (
+    AIMessage,
+    ToolMessage,
+    HumanMessage,
+    SystemMessage,
+)
+
+from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+
+from tools import calculator
 
 
-class GraphState(MessagesState):
-    pass
-
-
+# -------------------------
+# Environment
+# -------------------------
 
 load_dotenv()
 
@@ -19,31 +28,36 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("Groq API key not found in .env file")
 
-client = Groq(
-    api_key=GROQ_API_KEY
-)
+
+client = Groq(api_key=GROQ_API_KEY)
+
+
+# -------------------------
+# System prompt
+# -------------------------
 
 SYSTEM_PROMPT = """
-You are a helpful AI assistant with access to tools.
+You are a helpful AI assistant with access to one tool.
 
-AVAILABLE TOOLS
+AVAILABLE TOOL
 
 1. calculator
    - Use for arithmetic and numerical calculations when accuracy matters.
 
 TOOL-USAGE RULES
 
-- Use a tool when it is more appropriate than answering directly.
-- Do not use a tool when it is unnecessary.
-- For unknown or externally verifiable information, prefer web_search.
-- When a task requires multiple steps, use the result of one tool
-  call as input to the next tool call when appropriate.
+- Use the calculator when arithmetic is required.
+- Do not use the calculator when it is unnecessary.
 - Never invent tool results.
-- Treat tool results as authoritative for the operation performed.
+- Treat tool results as authoritative for the calculation.
 - If a tool returns an error, explain the error clearly.
-- Do not fabricate a successful result after a tool failure.
-- Keep the final response concise and directly answer the user's request.
+- Keep the final response concise.
 """
+
+
+# -------------------------
+# Tool schema
+# -------------------------
 
 tools = [
     {
@@ -56,7 +70,7 @@ tools = [
                 "properties": {
                     "expression": {
                         "type": "string",
-                        "description": "Mathematical expression to calculate, such as '25 * 17'."
+                        "description": "Mathematical expression such as '25 * 17'."
                     }
                 },
                 "required": ["expression"]
@@ -65,47 +79,136 @@ tools = [
     }
 ]
 
+
 TOOLS_MAP = {
     "calculator": calculator
 }
 
-def ask_llm(messages, tool_choice="auto"):
 
+# -------------------------
+# Convert LangChain messages
+# to Groq/OpenAI format
+# -------------------------
+
+def convert_messages(messages):
+
+    converted = []
+
+    for message in messages:
+
+        if isinstance(message, SystemMessage):
+
+            converted.append({
+                "role": "system",
+                "content": message.content
+            })
+
+        elif isinstance(message, HumanMessage):
+
+            converted.append({
+                "role": "user",
+                "content": message.content
+            })
+
+        elif isinstance(message, AIMessage):
+
+            converted_message = {
+                "role": "assistant",
+                "content": message.content or ""
+            }
+
+            if message.tool_calls:
+
+                converted_message["tool_calls"] = [
+                    {
+                        "id": tool_call["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tool_call["name"],
+                            "arguments": json.dumps(tool_call["args"])
+                        }
+                    }
+                    for tool_call in message.tool_calls
+                ]
+
+            converted.append(converted_message)
+
+        elif isinstance(message, ToolMessage):
+
+            converted.append({
+                "role": "tool",
+                "tool_call_id": message.tool_call_id,
+                "content": str(message.content)
+            })
+
+    return converted
+
+
+# -------------------------
+# LLM
+# -------------------------
+
+def ask_llm(messages):
+
+    groq_messages = convert_messages(messages)
 
     response = client.chat.completions.create(
         model="openai/gpt-oss-20b",
         temperature=0,
-        messages=messages,
-        tool_choice=tool_choice,
-        tools=tools
+        messages=groq_messages,
+        tools=tools,
+        tool_choice="auto"
     )
 
     return response.choices[0].message
 
-def call_llm(state: GraphState):
-    messages = state['messages']
+
+# -------------------------
+# LLM node
+# -------------------------
+
+def call_llm(state: MessagesState):
+
+    messages = state["messages"]
 
     response = ask_llm(messages)
 
-    return {"messages" : messages + [response]}
+    tool_calls = []
 
+    if response.tool_calls:
+
+        for tool_call in response.tool_calls:
+
+            tool_calls.append({
+                "id": tool_call.id,
+                "name": tool_call.function.name,
+                "args": json.loads(tool_call.function.arguments),
+                "type": "tool_call"
+            })
+
+    ai_message = AIMessage(
+        content=response.content or "",
+        tool_calls=tool_calls
+    )
+
+    return {
+        "messages": [ai_message]
+    }
+
+
+# -------------------------
+# Execute tool
+# -------------------------
 
 def execute_tool(tool_call):
 
-    tool_name = tool_call.function.name
-
-    try:
-        arguments = json.loads(
-            tool_call.function.arguments
-        )
-
-    except json.JSONDecodeError:
-        return "Tool arguements were not valid JSON"
+    tool_name = tool_call["name"]
+    arguments = tool_call["args"]
 
     tool = TOOLS_MAP.get(tool_name)
 
-    if not tool:
-        return f"Error: tool not found {tool_name}"
+    if tool is None:
+        return f"Error: tool not found: {tool_name}"
 
     try:
         return tool(**arguments)
@@ -113,27 +216,38 @@ def execute_tool(tool_call):
     except Exception as e:
         return f"Tool execution error: {e}"
 
-def run_tools(state: GraphState):
 
-    messages = state["messages"]
+# -------------------------
+# Tool node
+# -------------------------
 
-    last_message = messages[-1]
+def run_tools(state: MessagesState):
 
-    new_message = messages.copy()
+    last_message = state["messages"][-1]
+
+    tool_messages = []
 
     for tool_call in last_message.tool_calls:
 
         result = execute_tool(tool_call)
 
-        new_message.append({
-            "role": "tool",
-            "tool_call_id": tool_call.id,
-            "content": str(result)
-        })
+        tool_messages.append(
+            ToolMessage(
+                content=str(result),
+                tool_call_id=tool_call["id"]
+            )
+        )
 
-    return {"messages" : new_message}
+    return {
+        "messages": tool_messages
+    }
 
-def route_after_llm(state: GraphState):
+
+# -------------------------
+# Routing
+# -------------------------
+
+def route_after_llm(state: MessagesState):
 
     last_message = state["messages"][-1]
 
@@ -141,6 +255,11 @@ def route_after_llm(state: GraphState):
         return "run_tools"
 
     return END
+
+
+# -------------------------
+# Build graph
+# -------------------------
 
 builder = StateGraph(MessagesState)
 
@@ -150,33 +269,74 @@ builder.add_node("run_tools", run_tools)
 builder.add_edge(START, "call_llm")
 
 builder.add_conditional_edges(
-    "call_llm", route_after_llm
+    "call_llm",
+    route_after_llm
 )
 
 builder.add_edge("run_tools", "call_llm")
 
+
+# -------------------------
+# Checkpointer
+# -------------------------
+
 checkpointer = InMemorySaver()
 
-graph = builder.compile(checkpointer=checkpointer)
-
-result = graph.invoke({
-    "messages": [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT
-        },
-        {
-            "role": "user",
-            "content": "125 * 8"
-        }
-    ]
-
-},
-    {
-        "configurable" : {
-            "thread_id" : "conversation_1"
-        }
-    }
+graph = builder.compile(
+    checkpointer=checkpointer
 )
 
-print(result)
+
+# -------------------------
+# Thread configuration
+# -------------------------
+
+config = {
+    "configurable": {
+        "thread_id": "conversation_1"
+    }
+}
+
+
+# -------------------------
+# Invocation 1
+# -------------------------
+
+result_1 = graph.invoke(
+    {
+        "messages": [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+            },
+            {
+                "role": "user",
+                "content": "My name is Rohit."
+            }
+        ]
+    },
+    config
+)
+
+print("Invocation 1:")
+print(result_1["messages"][-1].content)
+
+
+# -------------------------
+# Invocation 2
+# -------------------------
+
+result_2 = graph.invoke(
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "What is my name?"
+            }
+        ]
+    },
+    config
+)
+
+print("\nInvocation 2:")
+print(result_2["messages"][-1].content)
