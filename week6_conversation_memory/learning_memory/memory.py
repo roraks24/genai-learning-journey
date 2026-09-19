@@ -12,17 +12,16 @@ from langchain_core.messages import (
 )
 
 from langgraph.graph import StateGraph, MessagesState, START, END
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.postgres import PostgresSaver
 
 from tools import calculator
-
 
 # -------------------------
 # Environment
 # -------------------------
 
 load_dotenv()
-
+DATABASE_URL = os.getenv("DATABASE_URL")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 if not GROQ_API_KEY:
@@ -280,29 +279,32 @@ builder.add_edge("run_tools", "call_llm")
 # Checkpointer
 # -------------------------
 
-checkpointer = InMemorySaver()
 
-graph = builder.compile(
-    checkpointer=checkpointer
-)
+with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
+
+    checkpointer.setup()
+
+    graph = builder.compile(
+        checkpointer=checkpointer
+    )
 
 
 # -------------------------
 # Thread configuration
 # -------------------------
 
-config = {
+    config = {
     "configurable": {
         "thread_id": "conversation_1"
     }
-}
+    }
 
 
 # -------------------------
 # Invocation 1
 # -------------------------
 
-result_1 = graph.invoke(
+    result_1 = graph.invoke(
     {
         "messages": [
             {
@@ -311,32 +313,14 @@ result_1 = graph.invoke(
             },
             {
                 "role": "user",
-                "content": "My name is Rohit."
+                "content": "what is my name?"
             }
         ]
     },
     config
-)
+    )
 
-print("Invocation 1:")
-print(result_1["messages"][-1].content)
+    print("Invocation 1:")
+    print(result_1["messages"][-1].content)
 
 
-# -------------------------
-# Invocation 2
-# -------------------------
-
-result_2 = graph.invoke(
-    {
-        "messages": [
-            {
-                "role": "user",
-                "content": "What is my name?"
-            }
-        ]
-    },
-    config
-)
-
-print("\nInvocation 2:")
-print(result_2["messages"][-1].content)
